@@ -19,6 +19,7 @@ import { db } from "../firebase/config";
 
 const Sidebar = () => {
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, "users"));
@@ -29,12 +30,21 @@ const Sidebar = () => {
       });
       console.log(users);
       setUsers([...users]);
+      setIsLoading(false);
     });
 
     //   return () => {
     //     unsub();
     //   }
   }, []);
+
+  // if (isLoading) {
+  //   return (
+  //     <Typography variant="p" component="p">
+  //       Loading...
+  //     </Typography>
+  //   );
+  // }
 
   return (
     <Box
@@ -47,10 +57,18 @@ const Sidebar = () => {
         <Typography variant="h6" component="h6">
           Active Users
         </Typography>
-
-        <Typography variant="p" component="p">
-          User 1
-        </Typography>
+        {isLoading && (
+          <Typography variant="p" component="p">
+            Loading...
+          </Typography>
+        )}
+        {users?.map((user) => {
+          return (
+            <Typography variant="p" component="p" key={user.id}>
+              {`${user.firstName} ${user.lastName} `}
+            </Typography>
+          );
+        })}
       </Stack>
     </Box>
   );
