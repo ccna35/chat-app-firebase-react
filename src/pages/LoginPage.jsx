@@ -11,9 +11,19 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { auth } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { useEffect } from "react";
+import {
+  addDoc,
+  getDoc,
+  doc,
+  where,
+  query,
+  collection,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 
 function Copyright(props) {
   return (
@@ -36,20 +46,48 @@ function Copyright(props) {
 export default function LoginPage() {
   const navigate = useNavigate();
 
+  const getUserDocId = async (userId) => {
+    let docId;
+    const q = query(collection(db, "users"), where("id", "==", userId));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id);
+      docId = doc.id;
+    });
+
+    return docId;
+  };
+
+  const updateUserStatus = async (docId, status) => {
+    console.log(docId);
+    const userRef = doc(db, "users", docId);
+
+    updateDoc(userRef, { isOnline: status })
+      .then((data) => console.log(data))
+      .catch((error) => {
+        console.log(error.code);
+        console.log(error.message);
+      });
+
+    // try {
+    //   await updateDoc(userRef, {
+    //     isOnline: status,
+    //   });
+    // } catch (error) {
+    //   console.log(error.code);
+    //   console.log(error.message);
+    // }
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-    });
 
     signInWithEmailAndPassword(auth, data.get("email"), data.get("password"))
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
-        // ...
-
+        updateUserStatus(getUserDocId(user.uid), true);
         navigate("/");
       })
       .catch((error) => {
@@ -69,7 +107,7 @@ export default function LoginPage() {
       } else {
         // User is signed out
         // ...
-        // navigate("/login");
+        navigate("/login");
       }
     });
 

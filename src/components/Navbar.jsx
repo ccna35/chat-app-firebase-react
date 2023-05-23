@@ -1,4 +1,3 @@
-import * as React from "react";
 import { styled, alpha } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -15,8 +14,19 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase/config";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db } from "../firebase/config";
+import {
+  where,
+  doc,
+  deleteDoc,
+  query,
+  collection,
+  onSnapshot,
+  updateDoc,
+  getDocs,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -59,8 +69,38 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function Navbar() {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const uid = user.uid;
+        setUserId(uid);
+        // const q = query(collection(db, "activeusers"), where("id", "==", uid));
+        // onSnapshot(q, (querySnapshot) => {
+        //   const users = [];
+        //   querySnapshot.forEach((doc) => {
+        //     users.push(doc.data());
+        //   });
+        //   console.log(users);
+        //   setDocId(users[0].docId);
+        // });
+      } else {
+        // User is signed out
+        // ...
+        // navigate("/login");
+      }
+    });
+
+    // return () => {
+    //   unsub();
+    // }
+  }, []);
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
 
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
@@ -82,14 +122,43 @@ export default function Navbar() {
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
-  const handleLogout = () => {
-    signOut(auth)
-      .then(() => {
-        // Sign-out successful.
-      })
-      .catch((error) => {
-        // An error happened.
+  // const [docId, setDocId] = useState(null);
+
+  const getUserDocId = async (userId) => {
+    let docId;
+    const q = query(collection(db, "users"), where("id", "==", userId));
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id);
+      docId = doc.id;
+      // setDocId(doc.id);
+    });
+
+    return docId;
+  };
+
+  const updateUserStatus = async (docId, status) => {
+    const userRef = doc(db, "users", docId);
+
+    try {
+      await updateDoc(userRef, {
+        isOnline: status,
       });
+    } catch (error) {
+      console.log(error.code);
+      console.log(error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    updateUserStatus(getUserDocId(userId), false);
+
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.log(error.code);
+      console.log(error.message);
+    }
   };
 
   const menuId = "primary-search-account-menu";

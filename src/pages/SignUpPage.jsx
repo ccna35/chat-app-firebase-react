@@ -17,7 +17,14 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
 } from "firebase/auth";
-import { Timestamp, addDoc, collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 
 function Copyright(props) {
   return (
@@ -57,13 +64,14 @@ export default function SignUpPage() {
         // Signed in
         const user = userCredential.user;
         console.log(user);
-        // Add a new document in collection "cities"
+        // Add a new document in collection "users"
         addDoc(collection(db, "users"), {
           email: data.get("email"),
           firstName: data.get("firstName"),
           lastName: data.get("lastName"),
           id: user.uid,
           createdAt: serverTimestamp(),
+          isOnline: true,
         })
           .then((data) => console.log(data))
           .catch((error) => {
