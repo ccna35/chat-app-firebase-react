@@ -4,7 +4,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -24,6 +24,7 @@ import {
   getDocs,
   updateDoc,
 } from "firebase/firestore";
+import useCheckUser from "../custom hooks/useCheckUser";
 
 function Copyright(props) {
   return (
@@ -45,39 +46,19 @@ function Copyright(props) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
-  const getUserDocId = async (userId) => {
-    let docId;
-    const q = query(collection(db, "users"), where("id", "==", userId));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      console.log(doc.id);
-      docId = doc.id;
-    });
+  const { isLoading, isError, isSuccess, user, errorMsg } =
+    useCheckUser(pathname);
 
-    return docId;
-  };
+  if (isSuccess) {
+    console.log(user);
+    navigate("/");
+  }
 
-  const updateUserStatus = async (docId, status) => {
-    console.log(docId);
-    const userRef = doc(db, "users", docId);
-
-    updateDoc(userRef, { isOnline: status })
-      .then((data) => console.log(data))
-      .catch((error) => {
-        console.log(error.code);
-        console.log(error.message);
-      });
-
-    // try {
-    //   await updateDoc(userRef, {
-    //     isOnline: status,
-    //   });
-    // } catch (error) {
-    //   console.log(error.code);
-    //   console.log(error.message);
-    // }
-  };
+  if (isError) {
+    console.log("No user was found, please log in or sign up first!");
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -87,7 +68,7 @@ export default function LoginPage() {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
-        updateUserStatus(getUserDocId(user.uid), true);
+        // updateUserStatus(getUserDocId(user.uid), true);
         navigate("/");
       })
       .catch((error) => {
@@ -95,26 +76,6 @@ export default function LoginPage() {
         const errorMessage = error.message;
       });
   };
-
-  useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const uid = user.uid;
-        navigate("/");
-        // ...
-      } else {
-        // User is signed out
-        // ...
-        navigate("/login");
-      }
-    });
-
-    // return () => {
-    //   unsub();
-    // }
-  }, []);
 
   const defaultTheme = createTheme();
 

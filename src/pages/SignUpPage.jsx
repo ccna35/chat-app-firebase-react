@@ -71,7 +71,6 @@ export default function SignUpPage() {
           lastName: data.get("lastName"),
           id: user.uid,
           createdAt: serverTimestamp(),
-          isOnline: true,
         })
           .then((data) => console.log(data))
           .catch((error) => {

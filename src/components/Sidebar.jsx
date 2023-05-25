@@ -12,32 +12,81 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import InboxIcon from "@mui/icons-material/MoveToInbox";
 import MailIcon from "@mui/icons-material/Mail";
-import { Avatar, Badge, Stack } from "@mui/material";
+import { Avatar, Badge, Stack, useStepContext } from "@mui/material";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../firebase/config";
 import { styled } from "@mui/material/styles";
+import useFetchAllUsers from "../custom hooks/useFetchAllUsers";
+import useCheckUser from "../custom hooks/useCheckUser";
+import { useLocation } from "react-router-dom";
 
-const Sidebar = () => {
-  const [activeUsers, setActiveUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+const Sidebar = ({ docRefId, setDocRefId }) => {
+  const { pathname } = useLocation();
 
-  // useEffect(() => {
-  //   const q = query(collection(db, "activeusers"));
-  //   onSnapshot(q, (querySnapshot) => {
-  //     const users = [];
-  //     querySnapshot.forEach((doc) => {
-  //       users.push(doc.data());
-  //     });
-  //     console.log(users);
-  //     setActiveUsers([...users]);
-  //     setIsLoading(false);
-  //   });
+  const {
+    isLoading,
+    isError,
+    isSuccess,
+    user: currentUser,
+    errorMsg,
+  } = useCheckUser(pathname);
 
-  //   //   return () => {
-  //   //     unsub();
-  //   //   }
-  // }, []);
+  const {
+    isLoading: loadingUsers,
+    isError: isUsersError,
+    isSuccess: isUsersSuccess,
+    users,
+    errorMsg: usersErrorMsg,
+  } = useFetchAllUsers();
+
+  if (isError) {
+    console.log(errorMsg);
+  }
+
+  const handleChat = async (contact2) => {
+    try {
+      const chatsRef = collection(db, "chats");
+
+      const q1 = query(
+        chatsRef,
+        where("contact1", "in", [currentUser, contact2]),
+        where("contact2", "in", [currentUser, contact2])
+      );
+
+      const querySnapshot = await getDocs(q1);
+      const results = [];
+      querySnapshot.forEach((doc) => {
+        results.push({ id: doc.id, ...doc.data() });
+        setDocRefId(doc.id);
+        console.log(doc.id, " => ", doc.data());
+      });
+
+      console.log(results);
+
+      if (results.length === 0) {
+        const docRef = await addDoc(collection(db, "chats"), {
+          contact1: currentUser,
+          contact2,
+        });
+        setDocRefId(docRef.id);
+        console.log("Document written with ID: ", docRef.id);
+      } else {
+      }
+    } catch (error) {
+      const errorCode = error.code;
+      console.log(errorCode);
+      const errorMessage = error.message;
+      console.log(errorMessage);
+    }
+  };
 
   const StyledBadge = styled(Badge)(({ theme }) => ({
     "& .MuiBadge-badge": {
@@ -85,34 +134,44 @@ const Sidebar = () => {
           </Typography>
         )}
 
-        {activeUsers?.map((user) => {
-          return (
-            <Box
-              key={user.id}
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              padding=".5rem 1rem"
-              bgcolor="#efefef"
-              borderRadius=".5rem"
-              marginBottom="1rem"
-            >
-              <Typography variant="p" component="p">
-                {`${user.firstName} ${user.lastName} `}
-              </Typography>
-              <StyledBadge
-                overlap="circular"
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                variant="dot"
+        {users
+          ?.filter((user) => user.id !== currentUser)
+          .map((user) => {
+            return (
+              <Box
+                key={user.id}
+                onClick={() => handleChat(user.id)}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: ".5rem 1rem",
+                  bgcolor: "#efefef",
+                  borderRadius: ".5rem",
+                  marginBottom: "1rem",
+                  cursor: "pointer",
+                  "&:hover": {
+                    bgcolor: "lightgray",
+                  },
+                  transition: "background-color 500ms",
+                }}
               >
-                <Avatar
-                  alt="Remy Sharp"
-                  src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=580&q=80"
-                />
-              </StyledBadge>
-            </Box>
-          );
-        })}
+                <Typography variant="p" component="p">
+                  {`${user.firstName} ${user.lastName} `}
+                </Typography>
+                <StyledBadge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  variant="dot"
+                >
+                  <Avatar
+                    alt="Remy Sharp"
+                    src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=580&q=80"
+                  />
+                </StyledBadge>
+              </Box>
+            );
+          })}
       </Stack>
     </Box>
   );
