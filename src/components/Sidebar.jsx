@@ -51,7 +51,14 @@ const Sidebar = ({ docRefId, setDocRefId }) => {
     console.log(errorMsg);
   }
 
+  if (isError) {
+    console.log(errorMsg);
+  }
+
+  const [currentFriend, setCurrentFriend] = useState(null);
+
   const handleChat = async (contact2) => {
+    setCurrentFriend(contact2);
     try {
       const chatsRef = collection(db, "chats");
 
@@ -134,6 +141,32 @@ const Sidebar = ({ docRefId, setDocRefId }) => {
           </Typography>
         )}
 
+        {isSuccess &&
+          users
+            .filter((user) => user.id === currentUser)
+            .map((user) => {
+              return (
+                <Typography
+                  variant="p"
+                  component="p"
+                  marginBottom="1rem"
+                  key={user.id}
+                >
+                  <Typography variant="span" component="span">
+                    Welcome
+                  </Typography>
+                  <Typography
+                    variant="span"
+                    component="span"
+                    fontWeight={500}
+                    marginLeft={0.5}
+                  >
+                    {`${user.firstName} ${user.lastName}`}
+                  </Typography>
+                </Typography>
+              );
+            })}
+
         {users
           ?.filter((user) => user.id !== currentUser)
           .map((user) => {
@@ -146,13 +179,13 @@ const Sidebar = ({ docRefId, setDocRefId }) => {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: ".5rem 1rem",
-                  bgcolor: "#efefef",
+                  bgcolor: `${
+                    currentFriend === user.id ? "#509eff" : "#efefef"
+                  }`,
+                  color: `${currentFriend === user.id && "white"}`,
                   borderRadius: ".5rem",
                   marginBottom: "1rem",
                   cursor: "pointer",
-                  "&:hover": {
-                    bgcolor: "lightgray",
-                  },
                   transition: "background-color 500ms",
                 }}
               >

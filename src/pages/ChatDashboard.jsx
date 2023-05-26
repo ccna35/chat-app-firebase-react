@@ -14,6 +14,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import useCheckUser from "../custom hooks/useCheckUser";
+import Welcome from "../components/Welcome";
 
 const ChatDashboard = () => {
   const { pathname } = useLocation();
@@ -33,18 +34,28 @@ const ChatDashboard = () => {
     navigate("/login");
   }
 
-  const [docRefId, setDocRefId] = useState("TU4AMi1ChDaIKbQ3aEjs");
+  const [docRefId, setDocRefId] = useState(null);
+  const [loggedinUser, setLoggedinUser] = useState({});
 
   return (
     <Box marginTop="2rem">
       <Container maxWidth="xl">
         <Stack direction="row" flexWrap="wrap" spacing={2}>
-          <Sidebar docRefId={docRefId} setDocRefId={setDocRefId} />
-          <ChatContainer
+          <Sidebar
             docRefId={docRefId}
             setDocRefId={setDocRefId}
-            currentUser={currentUser}
+            setLoggedinUser={setLoggedinUser}
           />
+
+          {docRefId === null ? (
+            <Welcome />
+          ) : (
+            <ChatContainer
+              docRefId={docRefId}
+              setDocRefId={setDocRefId}
+              currentUser={currentUser}
+            />
+          )}
         </Stack>
       </Container>
     </Box>

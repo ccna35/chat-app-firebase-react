@@ -2,7 +2,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { auth } from "../firebase/config";
 
-const useCheckUser = ({ path }) => {
+const useCheckUser = (path) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -18,12 +18,8 @@ const useCheckUser = ({ path }) => {
         setIsLoading(false);
         setIsSuccess(true);
         setUser(uid);
-        // navigate("/");
-        // ...
       } else {
         // User is signed out
-        // ...
-        // navigate("/login");
         setIsLoading(false);
         setIsSuccess(false);
         setUser(null);
